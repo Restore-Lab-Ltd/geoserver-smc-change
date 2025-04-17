@@ -34,18 +34,24 @@ public class CalculateChangeProcess implements GeoServerProcess {
             @DescribeParameter(name = "End Timestamp Second", description = "Ending timestamp for the second flight.")
             String endDateSecond
     ) throws Exception {
+        // Validate first flight dates
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime startDateLocal = LocalDateTime.parse(startDateFirst, formatter);
         LocalDateTime endDateLocal = LocalDateTime.parse(endDateFirst, formatter);
-        if (!startDateLocal.isBefore(endDateLocal)) {
-            throw new IllegalArgumentException("The first flights end date must be after the first flights start date.");
-        }
 
         LocalDateTime startDateSecondLocal = LocalDateTime.parse(startDateSecond, formatter);
         LocalDateTime endDateSecondLocal = LocalDateTime.parse(endDateSecond, formatter);
-        if (!startDateSecondLocal.isBefore(endDateSecondLocal)) {
-            throw new IllegalArgumentException("The second flights end date must be after the second flights start date.");
+        if (startDateLocal.isAfter(endDateLocal) || startDateSecondLocal.isAfter(endDateSecondLocal)) {
+            throw new IllegalArgumentException("Start must be before the end date.");
         }
+        boolean validRange = endDateLocal.isBefore(startDateSecondLocal) || endDateLocal.equals(startDateSecondLocal)
+                || endDateSecondLocal.isBefore(startDateLocal) || endDateSecondLocal.equals(startDateLocal);
+
+        if (!validRange) {
+            throw new IllegalArgumentException("Must be no overlap between the first flight range and second flight range.");
+        }
+
+        // Validates first and second do not overlap
 
         FeatureTypeInfo featureType = catalog.getFeatureTypeByName("tiger:poly_landmarks");
 

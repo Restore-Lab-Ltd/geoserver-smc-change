@@ -14,9 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.format.DateTimeParseException;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class CalculateChangeProcessTest {
@@ -48,17 +46,19 @@ public class CalculateChangeProcessTest {
     }
 
     @Test public void testBadFirstDate() {
-        assertThrows(IllegalArgumentException.class, () -> process.execute("2024-01-01 00:00:00",
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> process.execute("2024-01-01 00:00:00",
                 "2023-01-02 00:00:00",
                 "2024-01-01 00:00:00",
                 "2023-01-02 00:00:00"));
+        assertEquals("Start must be before the end date.", exception.getMessage());
     }
 
     @Test public void testBadSecondDate() {
-        assertThrows(IllegalArgumentException.class, () -> process.execute("2023-01-01 00:00:00",
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> process.execute("2023-01-01 00:00:00",
                 "2023-01-02 00:00:00",
                 "2024-01-01 00:00:00",
                 "2023-01-02 00:00:00"));
+        assertEquals("Start must be before the end date.", exception.getMessage());
     }
 
     @Test public void testMalformedDate() {
@@ -66,6 +66,14 @@ public class CalculateChangeProcessTest {
                 "2023-01-02 00:00:00",
                 "2024-01-01 00:00:00",
                 "2023-01-02 00:00:00"));
+    }
+
+    @Test public void testInvalidDateRangeOverlap() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> process.execute("2023-01-01 00:00:00",
+                "2023-01-02 00:00:00",
+                "2023-01-01 00:00:00",
+                "2023-01-02 00:00:00"));
+        assertEquals("Must be no overlap between the first flight range and second flight range.", exception.getMessage());
     }
 
     public SimpleFeature createFeature() {
