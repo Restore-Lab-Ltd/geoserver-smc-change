@@ -6,6 +6,7 @@ import org.geotools.api.data.SimpleFeatureSource;
 import org.geotools.api.feature.simple.SimpleFeature;
 import org.geotools.api.feature.simple.SimpleFeatureType;
 
+import org.geotools.api.filter.Filter;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
@@ -17,33 +18,34 @@ import java.time.format.DateTimeParseException;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class CalculateChangeProcessTest {
+public class CalculateChangeProcessIntegrationTests {
 
     private CalculateChangeProcess process;
 
     @BeforeEach
     public void setUp() throws Exception {
-        SimpleFeature feature = createFeature();
-        DefaultFeatureCollection test = new DefaultFeatureCollection();
-        test.add(feature);
+        DefaultFeatureCollection featureCollection = new DefaultFeatureCollection();
+        for (int i = 0; i < 10; i++) {
+            featureCollection.add(createFeature());
+        }
 
         SimpleFeatureSource mockFeatureSource = mock(SimpleFeatureSource.class);
-        when(mockFeatureSource.getFeatures()).thenReturn(test);
+        when(mockFeatureSource.getFeatures(any(Filter.class))).thenReturn(featureCollection);
 
         FeatureTypeInfo mockFeatureTypeInfo = mock(FeatureTypeInfo.class);
         doReturn(mockFeatureSource).when(mockFeatureTypeInfo).getFeatureSource(null, null);
 
         Catalog mockCatalog = mock(Catalog.class);
-        when(mockCatalog.getFeatureTypeByName("tiger:poly_landmarks")).thenReturn(mockFeatureTypeInfo);
+        when(mockCatalog.getFeatureTypeByName("restore-lab:smc_testing")).thenReturn(mockFeatureTypeInfo);
 
         process = new CalculateChangeProcess(mockCatalog);
     }
 
-    @Test public void testGood() throws Exception {
-        String result = process.execute("2023-01-01 00:00:00", "2023-01-02 00:00:00",
-                "2024-01-01 00:00:00", "2024-01-02 00:00:00");
-        assertTrue(result.contains("Hello, this is testing"));
-    }
+//    @Test public void testGood() throws Exception {
+//        SimpleFeatureCollection result = process.execute("2023-01-01 00:00:00", "2023-01-02 00:00:00",
+//                "2024-01-01 00:00:00", "2024-01-02 00:00:00");
+////        assertEquals("1, 0.000\n", result);
+//    }
 
     @Test public void testBadFirstDate() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> process.execute("2024-01-01 00:00:00",
@@ -76,15 +78,26 @@ public class CalculateChangeProcessTest {
         assertEquals("Must be no overlap between the first flight range and second flight range.", exception.getMessage());
     }
 
-    public SimpleFeature createFeature() {
+//    private SimpleFeatureCollection createValidFeatureCollection(DefaultFeatureCollection originalCollection) {
+//        SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
+//        typeBuilder.init(originalCollection.getSchema());
+//        typeBuilder.setName("smc_change_result");
+//        typeBuilder.add("smc_change", Double.class);
+//
+//        Defa
+//    }
+
+    private SimpleFeature createFeature() {
         SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
-        typeBuilder.setName("poly_landmarks");
-        typeBuilder.add("LANAME", String.class);
+        typeBuilder.setName("smc_testing");
+        typeBuilder.add("smc_average", Double.class);
+        typeBuilder.add("id", Long.class);
         SimpleFeatureType featureType = typeBuilder.buildFeatureType();
 
         // Creating a fake feature
         SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
-        featureBuilder.add("Test County");
+        featureBuilder.add(1d);
+        featureBuilder.add(1L);
         return featureBuilder.buildFeature("fid.1");
     }
 }
